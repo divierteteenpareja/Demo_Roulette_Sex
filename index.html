@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Roulette Sex - Versión Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0d040a;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .glow-pink {
+            box-shadow: 0 0 25px rgba(255, 42, 112, 0.4);
+        }
+        .glow-gold {
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+        .text-glow {
+            text-shadow: 0 0 15px rgba(255, 42, 112, 0.6);
+        }
+        .bg-custom-gradient {
+            background: radial-gradient(circle at center, #230b1b 0%, #1a0814 60%, #0a0206 100%);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(26, 8, 20, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff2a70;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="h-full bg-custom-gradient flex flex-col justify-between selection:bg-pink-600 selection:text-white">
+
+    <!-- Header Principal -->
+    <header class="w-full px-6 py-4 flex items-center justify-between border-b border-pink-950/40 backdrop-blur-md bg-black/30 sticky top-0 z-20">
+        <div class="flex items-center space-x-2">
+            <span class="text-2xl">🔥</span>
+            <h1 class="text-xl sm:text-2xl font-extrabold tracking-wider bg-gradient-to-r from-pink-500 via-rose-400 to-amber-300 bg-clip-text text-transparent text-glow">
+                ROULETTE SEX <span class="text-xs text-pink-400 font-normal uppercase bg-pink-950/80 px-2 py-0.5 rounded-full border border-pink-700/50">Demo</span>
+            </h1>
+        </div>
+        <div class="flex items-center space-x-3">
+            <button id="info-btn" onclick="openInfoModal()" class="px-4 py-2 rounded-full bg-pink-950/60 border border-pink-600/50 text-pink-300 font-semibold text-sm hover:bg-pink-900/60 transition-all shadow-sm active:scale-95 flex items-center space-x-1">
+                <span>ℹ️</span>
+                <span>INFO</span>
+            </button>
+            <button id="reset-btn" onclick="openResetModal()" class="px-3 py-2 rounded-full bg-neutral-900/80 border border-neutral-700 text-neutral-400 hover:text-white text-xs transition-all active:scale-95" title="Reiniciar Partida Demo">
+                🔄
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col items-center justify-center p-4 max-w-md mx-auto w-full relative">
+
+        <!-- Bloqueo Inicial / Mensaje de Estado -->
+        <div id="lock-banner" class="w-full mb-4 p-3 bg-pink-950/30 border border-pink-700/40 rounded-2xl text-center backdrop-blur-sm transition-all duration-300">
+            <p id="lock-status-text" class="text-sm sm:text-base text-pink-200/90 font-medium">
+                🔒 Ruleta bloqueada. Debes leer la información (INFO) antes de tu primera tirada.
+            </p>
+        </div>
+
+        <!-- Contador de Tiradas Demo -->
+        <div id="demo-counter-badge" class="mb-3 px-3 py-1 rounded-full bg-amber-950/40 border border-amber-600/40 text-amber-300 text-xs font-bold tracking-wide">
+            Tiradas disponibles en Demo: <span id="spins-left">2</span> / 2
+        </div>
+
+        <!-- Ruleta Central & Contenedor Canvas -->
+        <div class="relative w-72 h-72 sm:w-80 sm:h-80 my-2 flex items-center justify-center">
+            <!-- Puntero Superior -->
+            <div class="absolute -top-3 z-10 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[22px] border-t-amber-400 drop-shadow-[0_2px_8px_rgba(255,215,0,0.8)]"></div>
+            
+            <!-- Lienzo de Ruleta -->
+            <canvas id="roulette-canvas" class="w-full h-full rounded-full cursor-pointer glow-pink transition-transform duration-100" onclick="spinRoulette()"></canvas>
+
+            <!-- Botón Central Giratorio -->
+            <button id="spin-center-btn" onclick="spinRoulette()" class="absolute w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-br from-pink-600 to-rose-900 border-4 border-amber-300/80 text-white font-extrabold text-sm sm:text-base tracking-widest shadow-2xl glow-gold flex flex-col items-center justify-center hover:scale-105 active:scale-95 transition-all">
+                <span>GIRAR</span>
+                <span class="text-[10px] text-amber-200/80 font-normal">AZAR</span>
+            </button>
+        </div>
+
+        <!-- Prompt / Instrucción Táctil -->
+        <div class="mt-4 text-center">
+            <p class="text-sm text-neutral-400 animate-pulse">
+                Toca la ruleta o el botón central para hacer girar el destino
+            </p>
+        </div>
+
+        <!-- Reto Activo Actual (si existe) -->
+        <div id="active-challenge-widget" class="w-full mt-4 p-4 rounded-2xl bg-neutral-900/60 border border-pink-900/40 backdrop-blur-md hidden">
+            <div class="flex items-center justify-between mb-1">
+                <span class="text-xs uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-pink-600/30 text-pink-300 font-bold" id="widget-category">Categoría</span>
+                <span class="text-xs text-amber-400 font-medium">⏳ Reto activo (1 semana)</span>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-1" id="widget-title">Título del Reto</h3>
+            <button onclick="viewActiveChallenge()" class="text-xs text-pink-400 hover:text-pink-300 underline font-semibold mt-1">Ver detalles completos &rarr;</button>
+        </div>
+    </main>
+
+    <!-- Footer Simple -->
+    <footer class="w-full py-3 text-center border-t border-pink-950/30 bg-black/20 text-neutral-500 text-xs">
+        Roulette Sex Demo &bull; Explora, Juega y Enciende la Pasión
+    </footer>
+
+    <!-- MODAL INFO -->
+    <div id="info-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-neutral-900 border border-pink-900/60 w-full max-w-lg max-h-[90vh] rounded-3xl p-6 flex flex-col shadow-2xl relative overflow-hidden">
+            <div class="flex items-center justify-between pb-4 border-b border-neutral-800">
+                <h2 class="text-xl font-bold text-pink-400 flex items-center space-x-2">
+                    <span>🔥</span>
+                    <span>ROULETTE SEX (Versión Demo)</span>
+                </h2>
+                <button onclick="closeInfoModal()" class="w-8 h-8 rounded-full bg-neutral-800 text-neutral-400 hover:text-white flex items-center justify-center text-sm font-bold">✕</button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto py-4 space-y-4 text-base text-neutral-300 leading-relaxed pr-1">
+                <div class="p-3 bg-pink-950/20 border border-pink-900/30 rounded-xl text-pink-200 font-medium italic">
+                    "Reinventad el deseo. Romped las reglas."
+                </div>
+                
+                <p>¿Sentís que la llama necesita un nuevo aliento o queréis llevar vuestra complicidad al siguiente nivel? Roulette Sex nace con un único propósito: transformar la rutina en una aventura cargada de morbo, juego y tentación.</p>
+                
+                <p>Dejad que el azar tome las riendas de vuestra intimidad. Con cada tirada, la ruleta seleccionará de forma aleatoria experiencias excitantes, retos provocadores y nuevas perspectivas del placer para disfrutar juntos, sin prisas y sin tapujos.</p>
+                
+                <h3 class="font-bold text-amber-300 text-lg pt-2">🎲 ¿Cómo funciona el juego?</h3>
+                <p>Para que la tensión se mantenga viva y podáis paladear cada momento al máximo, el juego está diseñado para que dediquéis <strong>una semana a cada desafío</strong>. Siete días para alimentar la expectación, preparar el escenario perfecto y entregaros por completo a la experiencia.</p>
+                
+                <p>Los desafíos se dividen en dos universos de placer:</p>
+                <ul class="space-y-2 pl-2">
+                    <li class="flex items-start space-x-2">
+                        <span class="text-pink-500 font-bold">✦</span>
+                        <div><strong class="text-white">Sex-Posición:</strong> Un escaparate de nuevas formas de fusionar vuestros cuerpos, romper la monotonía postural y descubrir sensaciones que jamás imaginasteis.</div>
+                    </li>
+                    <li class="flex items-start space-x-2">
+                        <span class="text-pink-500 font-bold">✦</span>
+                        <div><strong class="text-white">Sex-Desafíos:</strong> Retos sensuales, juegos de rol y propuestas audaces que despertarán vuestra mente, desafiarán vuestros límites y encenderán la chispa en los rincones más imprevistos.</div>
+                    </li>
+                </ul>
+
+                <p class="pt-2 text-sm text-amber-400 font-semibold border-t border-neutral-800">
+                    ⚠️ Esta es una versión DEMO limitada a 2 tiradas de prueba.
+                </p>
+                <p class="text-sm text-neutral-400">
+                    Recuerda: Una pareja que explora, juega y mantiene viva la pasión es una pareja conectada en cuerpo, mente y alma. Dejad que la ruleta gire y descubrid vuestro próximo secreto.
+                </p>
+            </div>
+
+            <div class="pt-4 border-t border-neutral-800 flex justify-end">
+                <button onclick="closeInfoModal()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-700 text-white font-extrabold text-base shadow-lg hover:opacity-90 active:scale-95 transition-all">
+                    Empezar Demo & Desbloquear Ruleta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL RESULTADO / CARTA DE RETO -->
+    <div id="result-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-neutral-900 border border-pink-600/50 w-full max-w-lg max-h-[90vh] rounded-3xl p-6 flex flex-col shadow-[0_0_40px_rgba(255,42,112,0.3)] relative overflow-hidden">
+            <div class="flex items-center justify-between pb-3 border-b border-neutral-800">
+                <span id="modal-category-tag" class="text-xs uppercase font-extrabold px-3 py-1 rounded-full bg-pink-600/30 text-pink-300 border border-pink-500/30">Categoría</span>
+                <span class="text-xs text-amber-400 font-medium">✨ Nuevo Desafío Seleccionado</span>
+            </div>
+
+            <div class="flex-1 overflow-y-auto py-4 space-y-4 text-base text-neutral-200 leading-relaxed pr-1">
+                <h2 id="modal-title" class="text-xl sm:text-2xl font-black text-white tracking-wide">Título del Desafío</h2>
+                
+                <div class="p-4 rounded-2xl bg-pink-950/20 border border-pink-900/30 space-y-2">
+                    <p class="text-xs uppercase font-bold text-pink-400 tracking-wider">Descripción Sensual</p>
+                    <p id="modal-description" class="text-neutral-200 whitespace-pre-line text-base sm:text-lg leading-relaxed"></p>
+                </div>
+
+                <div id="modal-tip-container" class="p-4 rounded-2xl bg-amber-950/20 border border-amber-900/30 space-y-2">
+                    <p class="text-xs uppercase font-bold text-amber-400 tracking-wider">💡 Tip / Sugerencia Extra</p>
+                    <p id="modal-tip" class="text-amber-100 text-sm sm:text-base italic whitespace-pre-line leading-relaxed"></p>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-neutral-800">
+                <button onclick="acceptChallenge()" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 via-rose-600 to-amber-500 text-white font-extrabold text-base shadow-xl glow-pink hover:opacity-95 active:scale-95 transition-all">
+                    Aceptar y Guardar Desafío (1 Semana)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL LÍMITE DEMO ALCANZADO -->
+    <div id="demo-limit-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-neutral-900 border border-pink-600 w-full max-w-sm rounded-3xl p-6 text-center space-y-4 shadow-2xl glow-pink">
+            <div class="w-14 h-14 bg-pink-950/80 rounded-full flex items-center justify-center mx-auto text-pink-400 text-2xl font-bold border border-pink-600">
+                🔒
+            </div>
+            <h3 class="text-xl font-extrabold text-white">¡Has agotado tu prueba demo!</h3>
+            <p class="text-sm text-neutral-300 leading-relaxed">
+                Si quieres acceder a la versión completa de este juego erótico solo tienes que entrar en nuestra web y regístrate de forma gratuita para desbloquear todos los niveles.
+            </p>
+            <div class="pt-2">
+                <a href="#" onclick="alert('Aquí redirigirías al enlace de registro de vuestra web.'); return false;" class="block w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-600 to-rose-700 hover:opacity-95 text-white font-extrabold text-sm shadow-lg transition-all text-center">
+                    Registrarse Gratis en la Web
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PARTIDA GUARDADA -->
+    <div id="save-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-neutral-900 border border-neutral-700 w-full max-w-sm rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-pink-950/60 rounded-full flex items-center justify-center mx-auto text-pink-400 text-xl font-bold border border-pink-800">
+                💾
+            </div>
+            <h3 class="text-lg font-bold text-white">Partida Demo Guardada</h3>
+            <p class="text-xs text-neutral-400">Tienes una sesión demo en curso. ¿Deseas continuar o empezar de nuevo?</p>
+            <div class="space-y-2 pt-2">
+                <button onclick="resumeGame()" class="w-full py-3 rounded-xl bg-pink-600 hover:bg-pink-700 text-white font-bold text-sm transition-all shadow-md">
+                    Continuar Demo
+                </button>
+                <button onclick="startNewGameConfirm()" class="w-full py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold text-xs transition-all">
+                    Reiniciar Demo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL REINICIO / CONFIRMACIÓN -->
+    <div id="reset-confirm-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="bg-neutral-900 border border-neutral-700 w-full max-w-sm rounded-3xl p-6 text-center space-y-4 shadow-2xl">
+            <div class="w-12 h-12 bg-red-950/60 rounded-full flex items-center justify-center mx-auto text-red-400 text-xl font-bold border border-red-800">
+                ⚠️
+            </div>
+            <h3 class="text-lg font-bold text-white">¿Reiniciar Demo?</h3>
+            <p class="text-xs text-neutral-400">Se restablecerán las 2 tiradas de prueba y la ruleta volverá a bloquearse hasta leer la info.</p>
+            <div class="flex space-x-2 pt-2">
+                <button onclick="closeResetModal()" class="flex-1 py-2.5 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-semibold text-xs transition-all">
+                    Cancelar
+                </button>
+                <button onclick="executeResetGame()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition-all shadow-md">
+                    Sí, Reiniciar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Principal con Lógica de Resultados Fijos para Demo -->
+    <script>
+        const proposalsData = [
+            {
+                id: "des_6",
+                category: "Sex-Desafíos",
+                title: "CONFESIONES SECRETAS",
+                description: "La mente es el órgano sexual más poderoso que tenemos. Esta es una invitación a explorar vuestros deseos más profundos a través de las palabras, convirtiendo la conversación en un aperitivo ardiente antes de dar el siguiente paso.\n\nVestíos con vuestra lencería más atractiva y acomodaos en la cama bajo una luz tenue. Mientras las manos comienzan a recorrer sutilmente el cuerpo del otro con caricias pausadas, es momento de lanzar las preguntas. Confesar un fetiche oculto, recordar vuestro momento más salvaje o describir exactamente lo que le haríais al otro en ese mismo instante provocará que el ritmo de la respiración se acelere.",
+                tip: "Preguntas Picantes"
+            },
+            {
+                id: "pos_9",
+                category: "Sex-Position",
+                title: "AVENTURA CLANDESTINA",
+                description: "El mundo exterior está lleno de rincones ocultos esperando a ser descubiertos por vuestro deseo. Las cuatro paredes de casa se quedan atrás para dar paso a la adrenalina de lo imprevisto y la excitación de estar al margen de lo cotidiano.\n\nBuscad un escenario fuera de vuestra zona de confort: la intimidad cómplice en los asientos traseros del coche bajo las estrellas, un rincón apartado y sombrío en un parque solitario, o la tensión contenida en las últimas filas de una sala de cine. La urgencia del entorno, el miedo leve a ser descubiertos y la necesidad de mantener el silencio convertirán cada caricia en un acto eléctrico y salvaje. Dejad que la aventura os recuerde lo emocionante que es perder el control en el lugar menos pensado.",
+                tip: "Elegid el destino con algo de picardía previa, vestíos con ropa fácil de quitar y mantener la discreción os asegurará una experiencia tan excitante como segura. ¡La emoción de lo prohibido jamás falla!"
+            }
+        ];
+
+        let gameState = {
+            isLocked: true,          
+            hasReadInfo: false,      
+            activeChallenge: null,   
+            history: [],             
+            spinCount: 0             
+        };
+
+        let currentSpinningProposal = null;
+
+        window.onload = function() {
+            checkLocalStorage();
+            initCanvas();
+            updateUIState();
+            window.addEventListener('resize', initCanvas);
+        };
+
+        function checkLocalStorage() {
+            const saved = localStorage.getItem('roulette_sex_demo_fija_state');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed && (parsed.history?.length > 0 || parsed.activeChallenge || parsed.spinCount > 0)) {
+                        document.getElementById('save-modal').classList.remove('hidden');
+                    }
+                } catch(e) {
+                    console.error("Error al cargar localStorage", e);
+                }
+            }
+        }
+
+        function resumeGame() {
+            const saved = localStorage.getItem('roulette_sex_demo_fija_state');
+            if (saved) {
+                gameState = JSON.parse(saved);
+            }
+            document.getElementById('save-modal').classList.add('hidden');
+            updateUIState();
+            
+            if (gameState.spinCount >= 2) {
+                document.getElementById('demo-limit-modal').classList.remove('hidden');
+            }
+        }
+
+        function startNewGameConfirm() {
+            localStorage.removeItem('roulette_sex_demo_fija_state');
+            gameState = {
+                isLocked: true,
+                hasReadInfo: false,
+                activeChallenge: null,
+                history: [],
+                spinCount: 0
+            };
+            document.getElementById('save-modal').classList.add('hidden');
+            updateUIState();
+            initCanvas();
+        }
+
+        function saveGame() {
+            localStorage.setItem('roulette_sex_demo_fija_state', JSON.stringify(gameState));
+        }
+
+        function updateUIState() {
+            const lockBanner = document.getElementById('lock-banner');
+            const statusText = document.getElementById('lock-status-text');
+            const widget = document.getElementById('active-challenge-widget');
+            const spinsLeftElem = document.getElementById('spins-left');
+
+            const remainingSpins = Math.max(0, 2 - gameState.spinCount);
+            spinsLeftElem.innerText = remainingSpins;
+
+            if (gameState.spinCount >= 2) {
+                lockBanner.className = "w-full mb-4 p-3 bg-pink-950/60 border border-pink-500 rounded-2xl text-center backdrop-blur-sm glow-pink transition-all duration-300";
+                statusText.innerHTML = "🔒 <strong class='text-pink-300'>Versión Demo finalizada.</strong> Has agotado tus 2 tiradas de prueba.";
+            } else if (gameState.isLocked) {
+                lockBanner.className = "w-full mb-4 p-3 bg-pink-950/40 border border-pink-600/60 rounded-2xl text-center backdrop-blur-sm glow-pink transition-all duration-300";
+                statusText.innerHTML = "🔒 Ruleta bloqueada. Debes leer la información pulsando <strong class='text-pink-300'>INFO</strong> antes de tu primera tirada.";
+            } else {
+                lockBanner.className = "w-full mb-4 p-3 bg-emerald-950/30 border border-emerald-600/40 rounded-2xl text-center backdrop-blur-sm transition-all duration-300";
+                statusText.innerHTML = `✨ Demo activa. Te quedan <strong class='text-amber-300'>${remainingSpins}</strong> tirada(s).`;
+            }
+
+            if (gameState.activeChallenge) {
+                widget.classList.remove('hidden');
+                document.getElementById('widget-category').innerText = gameState.activeChallenge.category;
+                document.getElementById('widget-title').innerText = gameState.activeChallenge.title;
+            } else {
+                widget.classList.add('hidden');
+            }
+        }
+
+        function openInfoModal() {
+            const modal = document.getElementById('info-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function closeInfoModal() {
+            const modal = document.getElementById('info-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                gameState.hasReadInfo = true;
+                gameState.isLocked = false;
+                saveGame();
+                updateUIState();
+            }, 300);
+        }
+
+        function openResetModal() {
+            document.getElementById('reset-confirm-modal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('reset-confirm-modal').classList.add('hidden');
+        }
+
+        function executeResetGame() {
+            localStorage.removeItem('roulette_sex_demo_fija_state');
+            gameState = {
+                isLocked: true,
+                hasReadInfo: false,
+                activeChallenge: null,
+                history: [],
+                spinCount: 0
+            };
+            closeResetModal();
+            updateUIState();
+            initCanvas();
+        }
+
+        function getNextProposal() {
+            // 1ª tirada: Confesiones secretas (Sex-Desafíos)
+            // 2ª tirada: Aventura clandestina (Sex-Posición)
+            if (gameState.spinCount === 0) {
+                return proposalsData[0]; // Confesiones secretas
+            } else if (gameState.spinCount === 1) {
+                return proposalsData[1]; // Aventura clandestina
+            }
+            return null;
+        }
+
+        let currentAngle = 0;
+        let isSpinning = false;
+        const canvas = document.getElementById('roulette-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function initCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            const size = canvas.parentElement.clientWidth;
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            ctx.scale(dpr, dpr);
+            drawRoulette(currentAngle);
+        }
+
+        function drawRoulette(angle) {
+            const size = canvas.parentElement.clientWidth;
+            const center = size / 2;
+            const radius = center - 8;
+
+            ctx.clearRect(0, 0, size, size);
+
+            const slices = 12;
+            const arc = (2 * Math.PI) / slices;
+
+            for (let i = 0; i < slices; i++) {
+                const startAngle = angle + (i * arc);
+                const endAngle = startAngle + arc;
+
+                ctx.beginPath();
+                ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, startAngle, endAngle);
+                ctx.closePath();
+
+                if (i % 2 === 0) {
+                    ctx.fillStyle = '#1a0814';
+                } else {
+                    ctx.fillStyle = '#2d0c22';
+                }
+                ctx.fill();
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = i % 2 === 0 ? '#ff2a70' : '#ffd700';
+                ctx.stroke();
+
+                ctx.save();
+                ctx.translate(center, center);
+                ctx.rotate(startAngle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = i % 2 === 0 ? "#ffd700" : "#ff2a70";
+                ctx.font = "bold 11px 'Plus Jakarta Sans', sans-serif";
+                ctx.fillText(i % 2 === 0 ? "DEMO" : "SEX", radius - 16, 4);
+                ctx.restore();
+            }
+
+            ctx.beginPath();
+            ctx.arc(center, center, radius, 0, 2 * Math.PI);
+            ctx.lineWidth = 6;
+            ctx.strokeStyle = '#ffd700';
+            ctx.stroke();
+        }
+
+        function spinRoulette() {
+            if (isSpinning) return;
+
+            if (gameState.spinCount >= 2) {
+                document.getElementById('demo-limit-modal').classList.remove('hidden');
+                return;
+            }
+
+            if (gameState.isLocked) {
+                openInfoModal();
+                return;
+            }
+
+            currentSpinningProposal = getNextProposal();
+            if (!currentSpinningProposal) return;
+
+            isSpinning = true;
+            document.getElementById('spin-center-btn').classList.add('opacity-50', 'pointer-events-none');
+
+            const minVisions = 5;
+            const randomExtraAngle = Math.random() * (2 * Math.PI);
+            const targetAngle = currentAngle + (minVisions * 2 * Math.PI) + randomExtraAngle;
+            
+            const duration = 5000;
+            const startTime = performance.now();
+            const startAngle = currentAngle;
+
+            function animateSpin(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                
+                currentAngle = startAngle + (targetAngle - startAngle) * easeOut;
+                drawRoulette(currentAngle);
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    isSpinning = false;
+                    document.getElementById('spin-center-btn').classList.remove('opacity-50', 'pointer-events-none');
+                    gameState.spinCount++;
+                    showResultModal(currentSpinningProposal);
+                }
+            }
+
+            requestAnimationFrame(animateSpin);
+        }
+
+        function showResultModal(proposal) {
+            const modal = document.getElementById('result-modal');
+            document.getElementById('modal-category-tag').innerText = proposal.category;
+            document.getElementById('modal-title').innerText = proposal.title;
+            document.getElementById('modal-description').innerText = proposal.description;
+            
+            const tipContainer = document.getElementById('modal-tip-container');
+            if (proposal.tip) {
+                tipContainer.classList.remove('hidden');
+                document.getElementById('modal-tip').innerText = proposal.tip;
+            } else {
+                tipContainer.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.remove('opacity-0'), 10);
+        }
+
+        function acceptChallenge() {
+            if (currentSpinningProposal) {
+                gameState.activeChallenge = currentSpinningProposal;
+                gameState.history.push(currentSpinningProposal.id);
+                saveGame();
+                updateUIState();
+            }
+
+            const modal = document.getElementById('result-modal');
+            modal.classList.add('opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                if (gameState.spinCount >= 2) {
+                    document.getElementById('demo-limit-modal').classList.remove('hidden');
+                }
+            }, 300);
+        }
+
+        function viewActiveChallenge() {
+            if (gameState.activeChallenge) {
+                showResultModal(gameState.activeChallenge);
+            }
+        }
+    </script>
+</body>
+</html>
